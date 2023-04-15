@@ -1,63 +1,79 @@
-class Tarea:
-    def __init__(self, nombre, descripcion, fecha_vencimiento):
-        self.nombre = nombre
-        self.descripcion = descripcion
-        self.fecha_vencimiento = fecha_vencimiento
-        self.completada = False
+import tkinter as tk
+from tkinter import messagebox
 
-# Lista para almacenar las tareas
-tareas = []
-
-# Función para agregar una tarea
+# Función para agregar una tarea a la lista
 def agregar_tarea():
-    nombre = input("Ingrese el nombre de la tarea: ")
-    descripcion = input("Ingrese la descripción de la tarea: ")
-    fecha_vencimiento = input("Ingrese la fecha de vencimiento de la tarea: ")
-    tarea = Tarea(nombre, descripcion, fecha_vencimiento)
-    tareas.append(tarea)
-    print("Tarea agregada con éxito!")
-
-# Función para eliminar una tarea
-def eliminar_tarea():
-    nombre = input("Ingrese el nombre de la tarea a eliminar: ")
-    tarea_encontrada = None
-    for tarea in tareas:
-        if tarea.nombre == nombre:
-            tarea_encontrada = tarea
-            break
-    if tarea_encontrada:
-        tareas.remove(tarea_encontrada)
-        print("Tarea eliminada con éxito!")
+    tarea = entrada_tarea.get()
+    if tarea:
+        lista_tareas.insert(tk.END, tarea)
+        entrada_tarea.delete(0, tk.END)
     else:
-        print("Tarea no encontrada.")
+        messagebox.showerror("Error", "Por favor ingrese una tarea válida.")
+
+# Función para eliminar una tarea de la lista
+def eliminar_tarea():
+    seleccion = lista_tareas.curselection()
+    if seleccion:
+        lista_tareas.delete(seleccion)
+    else:
+        messagebox.showerror("Error", "Por favor seleccione una tarea.")
 
 # Función para marcar una tarea como completada
-def marcar_completada():
-    nombre = input("Ingrese el nombre de la tarea completada: ")
-    for tarea in tareas:
-        if tarea.nombre == nombre:
-            tarea.completada = True
-            print("Tarea marcada como completada.")
-            break
+def completar_tarea():
+    seleccion = lista_tareas.curselection()
+    if seleccion:
+        lista_tareas.itemconfig(seleccion, foreground="gray", selectforeground="gray")
     else:
-        print("Tarea no encontrada.")
+        messagebox.showerror("Error", "Por favor seleccione una tarea.")
 
-# Bucle principal para la interfaz de línea de comandos
-while True:
-    print("Bienvenido/a a la lista de tareas!")
-    print("1. Agregar tarea")
-    print("2. Eliminar tarea")
-    print("3. Marcar tarea como completada")
-    print("4. Salir")
-    opcion = input("Ingrese su opción: ")
-    if opcion == "1":
-        agregar_tarea()
-    elif opcion == "2":
-        eliminar_tarea()
-    elif opcion == "3":
-        marcar_completada()
-    elif opcion == "4":
-        print("Gracias por usar la lista de tareas. ¡Hasta luego!")
-        break
-    else:
-        print("Opción inválida. Por favor, ingrese una opción válida.")
+# Función para mostrar una ventana de ayuda
+def mostrar_ayuda():
+    messagebox.showinfo("Ayuda", "Bienvenido a ToDoTask!\n\n"
+                    "Para agregar una tarea, escriba la tarea en el cuadro de texto y haga clic en 'Agregar Tarea'.\n\n"
+                    "Para eliminar una tarea, seleccione la tarea en la lista y haga clic en 'Eliminar Tarea'.\n\n"
+                    "Para marcar una tarea como completada, seleccione la tarea en la lista y haga clic en 'Completar Tarea'.\n\n"
+                    "Disfrute de su lista de tareas!")
+
+# Crear la ventana
+ventana = tk.Tk()
+ventana.title("ToDoTask - Lista de Tareas")
+ventana.geometry("400x300")
+
+# Crear una lista de tareas
+lista_tareas = tk.Listbox(ventana, font=("Helvetica", 12), selectmode=tk.SINGLE)
+lista_tareas.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
+
+# Crear una barra de desplazamiento para la lista de tareas
+scrollbar = tk.Scrollbar(lista_tareas)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+lista_tareas.config(yscrollcommand=scrollbar.set)
+scrollbar.config(command=lista_tareas.yview)
+
+# Crear una entrada de texto para agregar tareas
+entrada_tarea = tk.Entry(ventana, font=("Helvetica", 12))
+entrada_tarea.pack(pady=5, padx=10, expand=True, fill=tk.X)
+
+# Crear un marco para los botones
+marco_botones = tk.Frame(ventana)
+marco_botones.pack(pady=5)
+
+# Crear botones para agregar, eliminar, completar tareas y mostrar ayuda
+btn_agregar = tk.Button(marco_botones, text="Agregar Tarea", command=agregar_tarea)
+btn_agregar.pack(side=tk.LEFT, padx=5)
+btn_eliminar = tk.Button(marco_botones, text="Eliminar Tarea", command=eliminar_tarea)
+btn_eliminar.pack(side=tk.LEFT, padx=5)
+btn_completar = tk.Button(marco_botones, text="Completar Tarea", command=completar_tarea)
+btn_completar.pack(side=tk.LEFT, padx=5)
+btn_ayuda = tk.Button(marco_botones, text="Ayuda", command=mostrar_ayuda)
+btn_ayuda.pack(side=tk.LEFT, padx=5)
+
+# Función para cerrar la aplicación
+def cerrar_aplicacion():
+    ventana.destroy()
+
+# Crear un botón para cerrar la aplicación
+btn_cerrar = tk.Button(ventana, text="Cerrar", command=cerrar_aplicacion)
+btn_cerrar.pack(pady=10)
+
+# Ejecutar el bucle principal de la ventana
+ventana.mainloop()
