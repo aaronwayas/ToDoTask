@@ -1,79 +1,107 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
+import pickle
 
-# Función para agregar una tarea a la lista
-def agregar_tarea():
-    tarea = entrada_tarea.get()
-    if tarea:
-        lista_tareas.insert(tk.END, tarea)
-        entrada_tarea.delete(0, tk.END)
-    else:
-        messagebox.showerror("Error", "Por favor ingrese una tarea válida.")
+class ToDoTask:
+    def __init__(self, text, completed=False):
+        self.text = text
+        self.completed = completed
 
-# Función para eliminar una tarea de la lista
-def eliminar_tarea():
-    seleccion = lista_tareas.curselection()
-    if seleccion:
-        lista_tareas.delete(seleccion)
-    else:
-        messagebox.showerror("Error", "Por favor seleccione una tarea.")
+class ToDoTaskApp:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title('ToDoTask v0.3')
+        self.root.geometry("800x600")  # Tamaño de ventana modificado
 
-# Función para marcar una tarea como completada
-def completar_tarea():
-    seleccion = lista_tareas.curselection()
-    if seleccion:
-        lista_tareas.itemconfig(seleccion, foreground="gray", selectforeground="gray")
-    else:
-        messagebox.showerror("Error", "Por favor seleccione una tarea.")
+        self.menu = tk.Menu(self.root)
+        self.root.config(menu=self.menu)
 
-# Función para mostrar una ventana de ayuda
-def mostrar_ayuda():
-    messagebox.showinfo("Ayuda", "Bienvenido a ToDoTask!\n\n"
-                    "Para agregar una tarea, escriba la tarea en el cuadro de texto y haga clic en 'Agregar Tarea'.\n\n"
-                    "Para eliminar una tarea, seleccione la tarea en la lista y haga clic en 'Eliminar Tarea'.\n\n"
-                    "Para marcar una tarea como completada, seleccione la tarea en la lista y haga clic en 'Completar Tarea'.\n\n"
-                    "Disfrute de su lista de tareas!")
+        self.file_menu = tk.Menu(self.menu, tearoff=0)
+        self.menu.add_cascade(label='Archivos', menu=self.file_menu)
+        self.file_menu.add_command(label='Abrir', command=self.open_tasks)
+        self.file_menu.add_command(label='Guardar', command=self.save_tasks)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label='Salir', command=self.root.quit)
 
-# Crear la ventana
-ventana = tk.Tk()
-ventana.title("ToDoTask - Lista de Tareas")
-ventana.geometry("400x300")
+        self.info_menu = tk.Menu(self.menu, tearoff=0)
+        self.menu.add_cascade(label='Información', menu=self.info_menu)
+        self.info_menu.add_command(label='Creador', command=self.show_creator)
 
-# Crear una lista de tareas
-lista_tareas = tk.Listbox(ventana, font=("Helvetica", 12), selectmode=tk.SINGLE)
-lista_tareas.pack(pady=10, padx=10, expand=True, fill=tk.BOTH)
+        self.task_list = tk.Frame(self.root)
+        self.task_list.pack(pady=10)
 
-# Crear una barra de desplazamiento para la lista de tareas
-scrollbar = tk.Scrollbar(lista_tareas)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-lista_tareas.config(yscrollcommand=scrollbar.set)
-scrollbar.config(command=lista_tareas.yview)
+        self.task_input = tk.Entry(self.root, font=('Helvetica', 16))  # Tamaño de fuente del cuadro de texto modificado
+        self.task_input.pack(pady=5, padx=20)  # Añadido padding en x
 
-# Crear una entrada de texto para agregar tareas
-entrada_tarea = tk.Entry(ventana, font=("Helvetica", 12))
-entrada_tarea.pack(pady=5, padx=10, expand=True, fill=tk.X)
+        self.add_button = tk.Button(self.root, text='Agregar', font=('Helvetica', 14), command=self.add_task)  # Tamaño de fuente del botón modificado
+        self.add_button.pack(pady=10)  # Añadido padding en y
 
-# Crear un marco para los botones
-marco_botones = tk.Frame(ventana)
-marco_botones.pack(pady=5)
+        self.tasks = []
 
-# Crear botones para agregar, eliminar, completar tareas y mostrar ayuda
-btn_agregar = tk.Button(marco_botones, text="Agregar Tarea", command=agregar_tarea)
-btn_agregar.pack(side=tk.LEFT, padx=5)
-btn_eliminar = tk.Button(marco_botones, text="Eliminar Tarea", command=eliminar_tarea)
-btn_eliminar.pack(side=tk.LEFT, padx=5)
-btn_completar = tk.Button(marco_botones, text="Completar Tarea", command=completar_tarea)
-btn_completar.pack(side=tk.LEFT, padx=5)
-btn_ayuda = tk.Button(marco_botones, text="Ayuda", command=mostrar_ayuda)
-btn_ayuda.pack(side=tk.LEFT, padx=5)
+    def add_task(self):
+        task_text = self.task_input.get().strip()
+        if task_text != '':
+            task_item = tk.Frame(self.task_list)
+            task_item.pack(side=tk.TOP)
+            task_checkbox = tk.Checkbutton(task_item, command=lambda: self.toggle_task(task_item))
+            task_checkbox.pack(side=tk.LEFT)
+            task_label = tk.Label(task_item, text=task_text)
+            task_label.pack(side=tk.LEFT)
+            self.tasks.append(ToDoTask(text=task_text, completed=False))
+            self.task_input.delete(0, tk.END)
 
-# Función para cerrar la aplicación
-def cerrar_aplicacion():
-    ventana.destroy()
+    def toggle_task(self, task_item):
+        task_index = self.task_list.children.index(task_item)
+        self.tasks[task_index].completed = not self.tasks[task_index].completed
+        task_item.configure(bg='gray' if self.tasks[task_index].completed else 'white')
 
-# Crear un botón para cerrar la aplicación
-btn_cerrar = tk.Button(ventana, text="Cerrar", command=cerrar_aplicacion)
-btn_cerrar.pack(pady=10)
+    def open_tasks(self):
+        file_path = filedialog.askopenfilename(filetypes=[('Archivo de tareas', '*.tdt')])
+        if file_path:
+            try:
+                with open(file_path, 'rb') as file:
+                    self.tasks = pickle.load(file)
+                    self.refresh_task_list()
+            except Exception as e:
+                messagebox.showerror('Error', f'Error al abrir el archivo: {e}')
 
-# Ejecutar el bucle principal de la ventana
-ventana.mainloop()
+    def save_tasks(self):
+        file_path = filedialog.asksaveasfilename(filetypes=[('Archivo de tareas', '*.tdt')],
+                                                defaultextension='.tdt')
+        if file_path:
+            try:
+                with open(file_path, 'wb') as file:
+                    pickle.dump(self.tasks, file)
+                    messagebox.showinfo('Guardado', 'Tareas guardadas correctamente')
+            except Exception as e:
+                messagebox.showerror('Error', f'Error al guardar el archivo: {e}')
+
+    def show_creator(self):
+        messagebox.showinfo('Creador', 'Esta aplicación fue creada por aaronwayas')
+
+    def refresh_task_list(self):
+        # Limpiar la lista de tareas actual
+        for child in self.task_list.winfo_children():
+            child.destroy()
+
+        # Mostrar las tareas en la lista
+        for task in self.tasks:
+            task_item = tk.Frame(self.task_list)
+            task_item.pack(side=tk.TOP)
+            task_checkbox = tk.Checkbutton(task_item, command=lambda: self.toggle_task(task_item))
+            task_checkbox.pack(side=tk.LEFT)
+            task_label = tk.Label(task_item, text=task.text)
+            task_label.pack(side=tk.LEFT)
+            if task.completed:
+                task_item.configure(bg='gray')
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == '__main__':
+    app = ToDoTaskApp()
+    app.run()
+
+
+   
